@@ -27,13 +27,14 @@ setup(
     platforms='any',
 
     dependency_links = [
-        'https://github.com/dmr/csp-solver/tarball/master#egg=csp_solver',
-        'https://github.com/dmr/smart-grid-actor/tarball/master#egg=smart_grid_actor'
+        'https://github.com/dmr/csp-solver/tarball/master#egg=csp_solver-0.4',
+        'https://github.com/dmr/smart-grid-actor/tarball/master#egg=smart_grid_actor-0.5'
     ],
 
     install_requires=[
-        'csp_solver',
-        'smart_grid_actor',
+        'csp_solver>=0.4',
+        'smart_grid_actor>=0.5',
+
         'argparse',
         'eventlet',
 
