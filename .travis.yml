@@ -1,0 +1,22 @@
+language: python
+python:
+ - "2.6"
+ - "2.7"
+
+install: python setup.py -q install
+script: nosetests -s
+
+before_install:
+ - pip install spec
+ - wget http://minisat.se/downloads/minisat2-070721.zip
+ - unzip minisat2-070721.zip
+ - cd minisat/core && make
+ - cd -
+ # include in $PATH
+ - sudo mv minisat/core/minisat /usr/bin/
+ - rm -Rf minisat
+
+notifications:
+  email:
+    recipients:
+      - dr@nwebs.de
