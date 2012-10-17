@@ -18,6 +18,9 @@ def get_actor_value(actor):
         pass
 
 
+def get_actor_vr(actor):
+    return actor.get_value_range()
+
 
 class ControllerActor(AbstractActor):
     _actors=None
@@ -52,38 +55,40 @@ class ControllerActor(AbstractActor):
             cls=self.__class__.__name__
         )
 
-    def get_value(self):
+    def _parallel_apply_for_actors_n_wait(
+            self,
+            fct
+            ):
         if self.multiprocessing_pool:
-            query_results_p = self.multiprocessing_pool.map_async(
-                get_actor_value,
-                self._actors
-            )
-            try:
-                query_results = query_results_p.get(9999999)
-            except KeyboardInterrupt as exc:
-                return
-
+            pool = self.multiprocessing_pool
         else:
             self.log("multiprocessing_pool is unset. "
                 "Switching to slow get implementation")
-            pool = CustomPool(4)
+            pool = CustomPool()
 
-            query_results_p = pool.map_async(
-                get_actor_value,
-                self._actors
-            )
-            try:
-                query_results = query_results_p.get(9999999)
-            except KeyboardInterrupt as exc:
-                return
+        query_results_p = pool.map_async(
+            fct,
+            self._actors
+        )
 
+        # pass a timeout to multiprocessing to fix bug
+        query_results = query_results_p.get(9999999)
+
+        # part of the ad hoc pool workaround
+        if not self.multiprocessing_pool:
             pool.terminate()
             pool.join()
 
+        return query_results
+
+    def get_value(self):
+        query_results = self._parallel_apply_for_actors_n_wait(
+            get_actor_value
+        )
+
         result = sum([
-        int(body)
-        for _t, _t, body in query_results
-        # pass a timeout to multiprocessing to fix bug
+            int(body)
+            for _t, _t, body in query_results
         ])
         return result
 
@@ -97,8 +102,11 @@ class ControllerActor(AbstractActor):
         range_max = 0
         all_actor_ranges = []
 
-        for actor in self._actors:
-            actor_value_range = actor.get_value_range()
+        query_results = self._parallel_apply_for_actors_n_wait(
+            get_actor_vr
+        )
+
+        for actor_value_range in query_results:
             all_actor_ranges.append(actor_value_range)
             actor_min = min(actor_value_range)
             range_min += actor_min
@@ -134,10 +142,9 @@ class ControllerActor(AbstractActor):
     def set_value(self, new_value):
         set_value = self.validate(new_value)
 
-        all_actor_ranges = []
-        for actor in self._actors:
-            actor_value_range = actor.get_value_range()
-            all_actor_ranges.append(actor_value_range)
+        all_actor_ranges = list(self._parallel_apply_for_actors_n_wait(
+            get_actor_vr
+        ))
 
         csp_result = csp_solver.do_solve(
             variables=all_actor_ranges,

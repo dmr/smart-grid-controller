@@ -3,7 +3,7 @@
 import unittest
 
 from smart_grid_actor.actor import Actor, NotSolvable
-from smart_grid_actor.server import start_actor_server, CustomPool
+from smart_grid_actor.server import CustomPool
 from smart_grid_actor.test._utils import AbstractInterface
 
 from smart_grid_controller.test._utils import csp_solver_config
