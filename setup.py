@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='Smart-Grid-Controller',
-    version='0.5',
+    version='0.5.1',
     url='https://github.com/dmr/smart-grid-controller',
     license='MIT',
     author='Daniel Rech',
@@ -28,12 +28,12 @@ setup(
 
     dependency_links = [
         'https://github.com/dmr/csp-solver/tarball/master#egg=csp_solver-0.4',
-        'https://github.com/dmr/smart-grid-actor/tarball/master#egg=smart_grid_actor-0.5'
+        'https://github.com/dmr/smart-grid-actor/tarball/master#egg=smart_grid_actor-0.5.1'
     ],
 
     install_requires=[
         'csp_solver>=0.4',
-        'smart_grid_actor>=0.5',
+        'smart_grid_actor>=0.5.1',
 
         'argparse',
         'eventlet',
