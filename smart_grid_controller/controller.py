@@ -1,6 +1,7 @@
 import urllib2
 import json
 import time
+import urlparse
 
 import csp_solver
 
@@ -179,6 +180,11 @@ class RemoteActor(AbstractActor):
             **kwargs
             ):
         self._uri = uri
+
+        self._get_value_uri = urlparse.urljoin(self._uri, '/')
+        self._set_value_uri = self._get_value_uri
+        self._get_value_range_uri = urlparse.urljoin(self._uri, '/vr/')
+
         self.get_timeout = get_timeout
         AbstractActor.__init__(self, **kwargs)
 
@@ -191,29 +197,33 @@ class RemoteActor(AbstractActor):
 
     def get_value(self):
         try:
-            url = self._uri + '/'
-            request_result = urllib2.urlopen(url,
-                timeout=self.get_timeout).read()
+            request_result = urllib2.urlopen(
+                self._get_value_uri,
+                timeout=self.get_timeout
+            ).read()
         except urllib2.URLError as exc:
             raise ConnectionError(
-                '{0} {1}'.format(self._uri, exc.reason))
+                '{0} {1}'.format(self._get_value_uri, exc.reason))
 
         actor_value = json.loads(request_result)['value']
         return actor_value
 
     def get_value_range(self):
         try:
-            url = self._uri + '/vr/'
-            request_result = urllib2.urlopen(url,
-                timeout=self.get_timeout).read()
+            request_result = urllib2.urlopen(
+                self._get_value_range_uri,
+                timeout=self.get_timeout
+            ).read()
         except urllib2.HTTPError as exc:
             raise NotSolvable('400 %s' % exc)
         except urllib2.URLError as exc:
             raise ConnectionError(
-                '{0} {1}'.format(self._uri, exc.reason))
+                '{0} {1}'.format(self._get_value_range_uri, exc.reason))
 
+        json_result = json.loads(request_result)
+        self.log(u"request result: {0}".format(json_result))
         actor_value_range = set(
-            json.loads(request_result)['value_range']
+            json_result['value_range']
         )
         return actor_value_range
 
@@ -221,10 +231,12 @@ class RemoteActor(AbstractActor):
         set_value = self.validate(new_value)
 
         try:
-            url = self._uri + '/'
             data = str(set_value)
             opener = urllib2.build_opener(urllib2.HTTPHandler)
-            request = urllib2.Request(url, data=data)
+            request = urllib2.Request(
+                self._set_value_uri,
+                data=data
+            )
             request.add_header('Content-Type', 'application/json')
             request.get_method = lambda: 'PUT'
             request_response = opener.open(
@@ -234,7 +246,7 @@ class RemoteActor(AbstractActor):
             raise NotSolvable('400 %s' % exc)
         except urllib2.URLError as exc:
             raise ConnectionError(
-                '{0} {1}'.format(self._uri, exc.reason))
+                '{0} {1}'.format(self._set_value_uri, exc.reason))
 
         actor_value = json.loads(request_result)['value']
         return actor_value
