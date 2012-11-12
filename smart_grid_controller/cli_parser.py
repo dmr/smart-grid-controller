@@ -4,7 +4,7 @@ import sys
 import argparse
 import urlparse
 
-from smart_grid_actor.server import start_actor_server, CustomPool
+from smart_grid_actor.server import start_actor_server
 from smart_grid_actor.cli_parser import add_actor_base_parser_params
 
 from smart_grid_controller.controller import (
@@ -72,7 +72,9 @@ def start_controller_actor(
     pool_kwargs = {}
     if worker_count:
         pool_kwargs['processes'] = worker_count
-    pool = CustomPool(**pool_kwargs)
+
+    import multiprocessing
+    pool = multiprocessing.Pool(**pool_kwargs)
 
     actor = ControllerActor(
         actors=actors,
@@ -94,11 +96,11 @@ def start_controller_actor(
 
     kw = dict(
         host_port_tuple=(host_name, port),
-        actor=actor,
-        log_to_std_err=log_requests
+        actor=actor
     )
     if dry_run:
-        print("Would start an actor server on {0} but this is a test run".format(kw))
+        print("Would start an actor controller on {0} "
+            "but this is a test run".format(kw))
         return kw
 
     try:
@@ -111,6 +113,8 @@ def start_controller_actor(
         pool.join()
 
 
+
+
 def add_controller_actor_params(parser):
     parser.add_argument('-a', '--actor-uris', nargs='+',
         type=check_uri, required=True,
@@ -119,7 +123,7 @@ def add_controller_actor_params(parser):
 
     parser.add_argument('--check-actor-uris',
         action="store_true", default=False,
-        help="Skips to check actor URIs for existence"
+        help="Check if the actor URIs can be queried before starting the ControllerActor server. default: False"
     )
 
     parser.add_argument('--worker-count',

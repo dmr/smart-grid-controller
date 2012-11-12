@@ -5,8 +5,9 @@ import urlparse
 
 import csp_solver
 
-from smart_grid_actor.actor import AbstractActor, ConnectionError, NotSolvable
-from smart_grid_actor.server import CustomPool
+from smart_grid_actor.actor import (
+    AbstractActor, ConnectionError, NotSolvable
+)
 
 
 def get_actor_value(actor):
@@ -23,6 +24,11 @@ def get_actor_vr(actor):
     return actor.get_value_range()
 
 
+def set_actor_value(args):
+    actor, new_value = args
+    return actor.set_value(new_value)
+
+
 class ControllerActor(AbstractActor):
     _actors=None
 
@@ -35,13 +41,22 @@ class ControllerActor(AbstractActor):
             ):
         self.multiprocessing_pool = multiprocessing_pool
 
+        self.actors_cls = None
         for actor in actors:
             if not isinstance(actor, AbstractActor):
                 raise Exception("Please pass a valid "
                                 "AbstractActor instance, not '%s'"
                 % actor
                 )
-            # actors needs to be a list
+
+            if (self.actors_cls
+                and not actor.__class__ == self.actors_cls):
+                raise Exception("Controller "
+                    "can only handle Actors of "
+                    "the same class."
+                )
+            self.actors_cls = actor.__class__
+
         assert isinstance(actors, list)
         self._actors = actors
         AbstractActor.__init__(self)
@@ -58,18 +73,26 @@ class ControllerActor(AbstractActor):
 
     def _parallel_apply_for_actors_n_wait(
             self,
-            fct
+            fct,
+            iterable=None
             ):
         if self.multiprocessing_pool:
             pool = self.multiprocessing_pool
         else:
             self.log("multiprocessing_pool is unset. "
                 "Switching to slow get implementation")
-            pool = CustomPool()
+            import multiprocessing
+            pool = multiprocessing.Pool()
+
+        if fct == set_actor_value:
+            assert iterable
+
+        if iterable == None:
+            iterable = self._actors
 
         query_results_p = pool.map_async(
             fct,
-            self._actors
+            iterable
         )
 
         # pass a timeout to multiprocessing to fix bug
@@ -156,14 +179,30 @@ class ControllerActor(AbstractActor):
         if ('satisfiable_bool' in csp_result
             and csp_result['satisfiable_bool'] == True):
 
-            for index, assigned_value in enumerate(
-                csp_result['solution_list']):
-                self.log('Setting value {0} for Actor {1} (id {2})'.format(
-                    assigned_value, index, self._actors[index]
-                ))
-                self._actors[index].set_value(assigned_value)
-            return set_value
+            # Using a subprocess will pickle the used objects
+            # --> the "set" values are lost.
+            # RemoteActor manipulates outside of
+            # context actors --> ok.
+            if self.actors_cls in [
+                    ControllerActor, RemoteActor
+                    ]:
+                iterable = [
+                    (self._actors[index], assigned_value)
+                    for index, assigned_value \
+                        in enumerate(csp_result['solution_list'])
+                ]
+                query_results = self._parallel_apply_for_actors_n_wait(
+                    set_actor_value,
+                    iterable
+                )
+            else:
+                for index, assigned_value in enumerate(
+                        csp_result['solution_list']):
+                    set_actor_value(
+                        (self._actors[index], assigned_value)
+                    )
 
+            return set_value
         else:
             raise NotSolvable(
                 '{0} is not an satisfiable'.format(set_value)
