@@ -8,10 +8,8 @@ from smart_grid_actor.server import start_actor_server
 from smart_grid_actor.test._utils import AbstractInterface
 
 from smart_grid_controller.test._utils import csp_solver_config
-from smart_grid_controller.controller import (
-    RemoteActor,
-    ControllerActor
-)
+from smart_grid_controller.controller import ControllerActor
+from smart_grid_controller.remote_actor import RemoteActor
 
 
 class ControllerOfControllerActorInterface(unittest.TestCase):

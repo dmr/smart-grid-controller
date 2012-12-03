@@ -7,10 +7,8 @@ import urlparse
 from smart_grid_actor.server import start_actor_server
 from smart_grid_actor.cli_parser import add_actor_base_parser_params
 
-from smart_grid_controller.controller import (
-    RemoteActor,
-    ControllerActor
-)
+from smart_grid_controller.remote_actor import RemoteActor
+from smart_grid_controller.controller import ControllerActor
 
 csp_not_installed_msg = (
     "csp_solver not installed! "
@@ -111,8 +109,6 @@ def start_controller_actor(
         pool.terminate()
     finally:
         pool.join()
-
-
 
 
 def add_controller_actor_params(parser):

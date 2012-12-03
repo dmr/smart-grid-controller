@@ -8,7 +8,7 @@ from smart_grid_actor.actor import Actor
 from smart_grid_actor.server import start_actor_server
 from smart_grid_actor.test._utils import AbstractInterface
 
-from smart_grid_controller.controller import RemoteActor
+from smart_grid_controller.remote_actor import RemoteActor
 
 
 class UrlParseLearnTest(unittest.TestCase):
