@@ -7,6 +7,8 @@ install: python setup.py -q install
 script: nosetests -s
 
 before_install:
+ # smart-grid-actor dependency bjoern needs to be compiled. dependencies:
+ - sudo aptitude install libev-dev python-dev -y
  - pip install spec
  - wget http://minisat.se/downloads/minisat2-070721.zip
  - unzip minisat2-070721.zip
