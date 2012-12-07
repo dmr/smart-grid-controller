@@ -14,7 +14,7 @@ class RemoteActor(AbstractActor):
             uri,
             get_timeout=5,
             **kwargs
-    ):
+            ):
         self._uri = uri
 
         self._get_value_uri = urlparse.urljoin(self._uri, '/')

@@ -53,7 +53,7 @@ def start_controller_actor(
         tmp_folder,
         actor_uris,
         log_requests,
-        check_actor_uris,
+        skip_actor_response_test,
         worker_count=None,
         dry_run=False,
         ):
@@ -80,21 +80,24 @@ def start_controller_actor(
         multiprocessing_pool=pool
     )
 
-    if check_actor_uris:
+    if not skip_actor_response_test:
         # test is actors of a ControllerActor exist
         # to prevent errors later
         for actor in actor._actors:
             import urllib2
             try:
-                actor.get_value()
+                value = actor.get_value()
+                assert type(value) == int
             except urllib2.URLError as exc:
                 print("Error while checking {0}: {1}".format(actor, exc.reason))
                 import sys
                 sys.exit(1)
+        print("All actors exist and respond as expected")
 
     kw = dict(
         host_port_tuple=(host_name, port),
-        actor=actor
+        actor=actor,
+        log_requests=log_requests
     )
     if dry_run:
         print("Would start an actor controller on {0} "
@@ -105,7 +108,7 @@ def start_controller_actor(
         start_actor_server(**kw)
     except KeyboardInterrupt:
         pool.terminate()
-    except Exception, e:
+    except Exception:
         pool.terminate()
     finally:
         pool.join()
@@ -116,17 +119,14 @@ def add_controller_actor_params(parser):
         type=check_uri, required=True,
         help="URIs for remote actors of this controller actor actor"
     )
-
-    parser.add_argument('--check-actor-uris',
+    parser.add_argument('--skip-actor-response-test',
         action="store_true", default=False,
-        help="Check if the actor URIs can be queried before starting the ControllerActor server. default: False"
+        help=("Skip the test if all actors can be queried "
+            "before starting the ControllerActor server. default: False")
     )
-
-    parser.add_argument('--worker-count',
-        help=(
-            "Worker count for the parallel processing module. "
-            "Defaults to CPU cores count"
-            )
+    parser.add_argument('--worker-count', type=int,
+        help=("Worker count for the parallel processing module. "
+            "Defaults to CPU cores count")
     )
 
     # The following arguments are not pretty here. They belong to
