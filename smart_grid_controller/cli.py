@@ -5,7 +5,7 @@ import argparse
 import urlparse
 
 from smart_grid_actor.server import start_actor_server
-from smart_grid_actor.cli_parser import add_actor_base_parser_params
+from smart_grid_actor.cli import add_actor_base_parser_params
 
 from smart_grid_controller.remote_actor import RemoteActor
 from smart_grid_controller.controller import ControllerActor
@@ -27,7 +27,7 @@ def check_uri(uri):
         raise argparse.ArgumentTypeError(
             "%r is not a valid URL. scheme must be http(s)!" % uri)
 
-    # cut off fragment
+    # cut of fragment
     uri = urlparse.urlunparse((parsed.scheme, parsed.netloc, parsed.path,
                                parsed.params, parsed.query, ""))
     return uri
@@ -138,3 +138,9 @@ def add_controller_actor_params(parser):
     parser.set_defaults(
         execute_function=start_controller_actor
     )
+
+
+def main():
+    parser = get_parser()
+    parsed_args_dct = parser.parse_args().__dict__
+    parsed_args_dct.pop('execute_function')(**parsed_args_dct)

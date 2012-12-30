@@ -3,7 +3,7 @@
 import unittest
 import time
 
-from smart_grid_actor.actor import Actor, NotSolvable
+from smart_grid_actor.actor import Actor
 from smart_grid_actor.server import start_actor_server
 from smart_grid_actor.test._utils import AbstractInterface
 
@@ -57,7 +57,7 @@ class RemoteActorInterfaceControllingControllerActorOfActor(
             start_in_background_thread=True,
             actor=ControllerActor(
                 actors=[
-                    Actor(value_range=[1,2,3])
+                    Actor(value_range=[1, 2, 3])
                 ],
                 csp_solver_config=csp_solver_config,
             )

@@ -93,7 +93,7 @@ class ControllerActor(AbstractActor):
             iterable
         )
 
-        # pass a timeout to multiprocessing to fix bug
+        # pass a timeout to multiprocessing to fix bug with timeout
         query_results = query_results_p.get(9999999)
 
         # part of the ad hoc pool workaround
@@ -115,8 +115,9 @@ class ControllerActor(AbstractActor):
         return result
 
     def get_value_range(self):
-        # alternative algorithm: try every possible answer. This is
-        # not an option as there might be infinity possibilities
+        # the alternative algorithm (try every possible answer) is
+        # not an option here as there might be an infinite
+        # amount of possibilities
         # --> calculate a few small problems by trying out every
         # possibility is solvable and faster
 
@@ -189,7 +190,7 @@ class ControllerActor(AbstractActor):
                     for index, assigned_value \
                         in enumerate(csp_result['solution_list'])
                 ]
-                query_results = self._parallel_apply_for_actors_n_wait(
+                _query_results = self._parallel_apply_for_actors_n_wait(
                     set_actor_value,
                     iterable
                 )
